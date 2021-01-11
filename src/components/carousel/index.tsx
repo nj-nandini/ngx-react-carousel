@@ -15,28 +15,27 @@ export const Carousel: FC<CarouselData> = ({ items, active }: CarouselData) => {
   const [direction, setDirection] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [cardItems, setCardItems] = useState(items);
+  let categories: string[] = items
+    .map(item => item.category)
+    .filter((it, i, ar) => ar.indexOf(it) === i);
+  const [selectedCategory, setSelectedCategory] = useState(categories);
 
-  const getCategories = items => {
-    return items
-      .map(item => item.category)
-      .filter((it, i, ar) => ar.indexOf(it) === i);
-  };
-  const [categories, setCategories] = useState(getCategories(items));
-  let selectedCategory = [];
   const generateItems = () => {
     var itemsData = [];
     var level;
-    for (var i = activeItem - 1; i < activeItem + 2; i++) {
-      var index = i;
-      if (i < 0) {
-        index = cardItems.length + i;
-      } else if (i >= cardItems.length) {
-        index = i % cardItems.length;
+    if (cardItems && cardItems.length > 0) {
+      for (var i = activeItem - 1; i < activeItem + 2; i++) {
+        var index = i;
+        if (i < 0) {
+          index = cardItems.length + i;
+        } else if (i >= cardItems.length) {
+          index = i % cardItems.length;
+        }
+        level = activeItem - i;
+        itemsData.push(
+          <Item key={index} item={cardItems[index]} level={level} />
+        );
       }
-      level = activeItem - i;
-      itemsData.push(
-        <Item key={index} item={cardItems[index]} level={level} />
-      );
     }
     return itemsData;
   };
@@ -56,32 +55,31 @@ export const Carousel: FC<CarouselData> = ({ items, active }: CarouselData) => {
   const toggle = () => {
     setShowFilter(!showFilter);
     if (showFilter) {
-      setCardItems(items =>
-        items
-          .filter(item => {
-            if (selectedCategory.find(category => category === item.category)) {
-              return item;
-            }
-            return undefined;
-          })
-          .filter(item => item !== undefined)
+      setCardItems(() =>
+        items.filter(item =>
+          selectedCategory.find(category => category === item.category)
+        )
       );
-      setCategories(getCategories(cardItems));
     }
   };
   const onFilterCheck = (e: any) => {
     if (e.target.checked) {
-      selectedCategory.push(e.target.value);
+      setSelectedCategory(categories => [...categories, e.target.value]);
     } else {
       const index = selectedCategory.indexOf(e.target.value);
+
       if (index > -1) {
-        selectedCategory.splice(index, 1);
+        const categories = selectedCategory;
+        categories.splice(index, 1);
+        setSelectedCategory(categories);
       }
     }
   };
   return (
-    <div id="carousel" className="noselect">
-      <FontAwesomeIcon icon={faFilter} onClick={toggle} />
+    <div className="carousel-container">
+      <div className="filter-icon">
+        <FontAwesomeIcon icon={faFilter} onClick={toggle} />
+      </div>
       {showFilter && (
         <div className="filter">
           <ul>
@@ -98,25 +96,23 @@ export const Carousel: FC<CarouselData> = ({ items, active }: CarouselData) => {
                 {category}
               </li>
             ))}
-            {/* <li>
-              <input type="checkbox" />
-              Category 1
-            </li> */}
           </ul>
         </div>
       )}
-      <div className="arrow arrow-left" onClick={moveLeft}>
-        <FontAwesomeIcon icon={faArrowLeft} />
-      </div>
-      <ReactCSSTransitionGroup
-        transitionName={direction}
-        transitionEnterTimeout={500}
-        transitionLeaveTimeout={300}
-      >
-        {generateItems()}
-      </ReactCSSTransitionGroup>
-      <div className="arrow arrow-right" onClick={moveRight}>
-        <FontAwesomeIcon icon={faArrowRight} />
+      <div id="carousel" className="noselect">
+        <div className="arrow arrow-left" onClick={moveLeft}>
+          <FontAwesomeIcon icon={faArrowLeft} />
+        </div>
+        <ReactCSSTransitionGroup
+          transitionName={direction}
+          transitionEnterTimeout={500}
+          transitionLeaveTimeout={300}
+        >
+          {generateItems()}
+        </ReactCSSTransitionGroup>
+        <div className="arrow arrow-right" onClick={moveRight}>
+          <FontAwesomeIcon icon={faArrowRight} />
+        </div>
       </div>
     </div>
   );
